@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <script src="js/libs/jquery1.7.1.js"></script>
+</head>
+<body>
+
+
+<script>
+
+
+    var a = {
+        name:"sun",
+        age:23
+    }
+
+    var b = {
+        name:"xuwei",
+        age:{
+            a:1,
+            b:2
+        }
+    }
+
+
+    var c = $.extend({},b);
+
+    b.age.a = 6;
+
+    console.log(c);
+
+
+
+
+</script>
+
+</body>
+</html>

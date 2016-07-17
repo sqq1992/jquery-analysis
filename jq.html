@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+
+    <div id="test">
+        我是测试啊
+        <div id="must">333 </div>
+    </div>
+
+    <script src="js/test/jq.js"></script>
+
+    <script>
+
+
+        function deepClone(obj){
+            var target;
+
+            if(obj instanceof Array){
+                target = [];
+                for(var i= 0,j=obj.length;i<j;i++){
+                    target.push(arguments.callee(obj[i]));
+                }
+            }else if(obj instanceof Object){
+                target = {};
+                for(var i in obj){
+                    target[i] = arguments.callee(obj[i]);
+                }
+
+            }else{
+                return obj;
+            }
+
+
+            return target;
+        }
+
+
+        function newClone(){
+            var options,
+                    src,
+                    i = 1;              //对象起始位置
+                    target = arguments[0] || {},
+                    deep = false,       //是否为深度复制
+                    lenght = arguments.length;
+
+            if(typeof target==="boolean"){
+                target = arguments[1] || {};
+                deep = target;
+                i = 2;
+            }
+
+            if(typeof target!=="object" && typeof target!=="function"){
+                target = {};
+            }
+
+
+
+
+
+
+
+
+        }
+
+
+        console.log(typeof newClone);
+    </script>
+</body>
+</html>
