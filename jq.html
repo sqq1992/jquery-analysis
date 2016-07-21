@@ -37,11 +37,10 @@
 
             return target;
         }
-
-
         function newClone(){
-            var options,
-                    src,
+            var options,                //目标对象
+                    src,                //原目标对象
+                    copy,               //复制的属性
                     i = 1;              //对象起始位置
                     target = arguments[0] || {},
                     deep = false,       //是否为深度复制
@@ -57,8 +56,28 @@
                 target = {};
             }
 
+            if(lenght===i){
+                target = this;
+                --i;
+            }
+
+            for(i;i<lenght;i++){
+
+                if((options=arguments[i])!=null){
+                    for(var name in options){
+                        src = target[name];
+                        copy = options[name];
+
+                        if(copy===target){  //避免死循环
+                            continue;
+                        }
 
 
+                    }
+                }
+
+
+            }
 
 
 
@@ -66,8 +85,7 @@
 
         }
 
-
-        console.log(typeof newClone);
+        console.log($.isNumeric(33));
     </script>
 </body>
 </html>
