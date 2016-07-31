@@ -889,6 +889,62 @@
             class2type[ "[object " + name + "]" ] = name.toLowerCase();
         });
 
+        browserMatch = jQuery.uaMatch( userAgent );
+        if ( browserMatch.browser ) {
+            jQuery.browser[ browserMatch.browser ] = true;
+            jQuery.browser.version = browserMatch.version;
+        }
+
+// Deprecated, use jQuery.browser.webkit instead
+        if ( jQuery.browser.webkit ) {
+            jQuery.browser.safari = true;
+        }
+
+// IE doesn't match non-breaking spaces with \s
+        if ( rnotwhite.test( "\xA0" ) ) {
+            trimLeft = /^[\s\xA0]+/;
+            trimRight = /[\s\xA0]+$/;
+        }
+
+// All jQuery objects should point back to these
+        rootjQuery = jQuery(document);
+
+// Cleanup functions for the document ready method
+        if ( document.addEventListener ) {
+            DOMContentLoaded = function() {
+                document.removeEventListener( "DOMContentLoaded", DOMContentLoaded, false );
+                jQuery.ready();
+            };
+
+        } else if ( document.attachEvent ) {
+            DOMContentLoaded = function() {
+                // Make sure body exists, at least, in case IE gets a little overzealous (ticket #5443).
+                if ( document.readyState === "complete" ) {
+                    document.detachEvent( "onreadystatechange", DOMContentLoaded );
+                    jQuery.ready();
+                }
+            };
+        }
+
+// The DOM ready check for Internet Explorer
+        function doScrollCheck() {
+            if ( jQuery.isReady ) {
+                return;
+            }
+
+            try {
+                // If IE is used, use the trick by Diego Perini
+                // http://javascript.nwbox.com/IEContentLoaded/
+                document.documentElement.doScroll("left");
+            } catch(e) {
+                setTimeout( doScrollCheck, 1 );
+                return;
+            }
+
+            // and execute any waiting functions
+            jQuery.ready();
+        }
+
 
         //外部返回接口
         return jQuery;
@@ -954,14 +1010,263 @@
     //存储html的缓存对象
     jQuery.fragments = {};
 
+    //sizzle选择器的分析
+    (function(){
+
+        var chunker = /((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[^\[\]]*\]|['"][^'"]*['"]|[^\[\]'"]+)+\]|\\.|[^ >+~,(\[\\]+)+|[>+~])(\s*,\s*)?((?:.|\r|\n)*)/g,
+            expando = "sizcache" + (Math.random() + '').replace('.', ''),
+            done = 0,
+            toString = Object.prototype.toString,
+            hasDuplicate = false,
+            baseHasDuplicate = true,
+            rBackslash = /\\/g,
+            rReturn = /\r\n/g,
+            rNonWord = /\W/;
+
+
+        /**
+         * 查找选择器匹配的元素集合
+         * @param selector  css选择器表达式
+         * @param context   文档的上下文对象
+         * @param results   可选的数组或类数组，存放dom元素
+         * @param seed      可选的元素集合
+         * @constructor
+         */
+        var Sizzle = function( selector, context, results, seed ){
+            results = results || [];
+            context = context || document;
+
+            var origContext = context;  //备份上下文对象
+
+            //如果上下文对象不是dom元素并且也不是document对象，直接返回空数组
+            if(context.nodeType!==1 && context.nodeType!==9){
+                return [];
+            }
+
+            //如果selector是空字符串或者不是字符串，则直接返回传入的可选数组
+            if(!selector || typeof selector !=="string"){
+                return results;
+            }
+
+            var m,      //用于存放正则chunker每次匹配选择器表达式selector的结果
+                set,//从右向左的查找方式中,是最后一个表达式匹配的元素集合
+                checkSet,   //set的副本
+                extra,  //用于存储选择器表达式中第一个逗号之后的其他并列选择器表达式
+                ret,//只在从右向左执行方式中用到，存放.find对最后一个快表达的查找结果
+                cur,    //
+                pop,    //只在从右向左的查找方式中用到，表示单个块表达式
+                i,
+                prune = true,   //只在从右向左的查找方式中用得到，表示候选集set是否需要筛选
+                contextXML = Sizzle.isXML( context ),   //表示上下文context是否是xml文档
+                parts = [], //存放了正则chunker从选择器表达式中提取的快表达式和快间关系符
+                soFar = selector;   //用于保存正则chunker每次从选择器表达式中提取了块表达式或块间关系符后的剩余部分，初始值为完整的选择器表达式
+
+            do{     //遍历单个选择器或者并列选择器
+                chunker.exec("");
+                m = chunker.exec(soFar);    //匹配的数组
+                if(m){
+                    soFar = m[3];           //并且选择器的表达式，如果有的话
+
+                    parts.push(m[1]);       //插入第一个表达式
+
+                    if(m[2]){               //如果是个并列选择器的话，直接跳出循环结束
+                        extra = m[3];       //存放并列选择器
+                        break;
+                    }
+
+
+                }
+
+            }while(m);
+
+            console.log(parts);
+            //如果存在位置伪类，则从左向右查找 列如div button:first
+            if ( parts.length > 1 && origPOS.exec( selector ) ) {
+
+                console.log(parts);
+                console.log([parts[0]]);
+                console.log(Expr.relative[ parts[0] ]);
+
+                if ( parts.length === 2 && Expr.relative[ parts[0] ] ) {    //如果数组parts只有2个元素，并且第一个是块间关系符的话，则可以直接调用来匹配元素集合
+
+                    set = posProcess( parts[0] + parts[1], context, seed );
+                } else {                                                //否则从左向右对数组parts的其他表达式逐个进行查找
+                    set = Expr.relative[ parts[0] ] ?
+                        [ context ] :
+                        Sizzle( parts.shift(), context );
+                    console.log(set);
+                    while ( parts.length ) {
+                        selector = parts.shift();
+
+                        if ( Expr.relative[ selector ] ) {
+                            selector += parts.shift();
+                        }
+
+                        set = posProcess( selector, set, seed );
+                    }
+                    console.log(set);
+                }
+
+            }
+
+        };
+
+        /**
+         * 判断是否是xml文档
+         * @param elem  传入的节点
+         * @returns {boolean}
+         */
+        Sizzle.isXML = function( elem ) {
+            // documentElement is verified for cases where it doesn't yet exist
+            // (such as loading iframes in IE - #4833)
+            var documentElement = (elem ? elem.ownerDocument || elem : 0).documentElement;
+
+            return documentElement ? documentElement.nodeName !== "HTML" : false;
+        };
+
+
+        var Expr = Sizzle.selectors = {
+            match: {
+                ID: /#((?:[\w\u00c0-\uFFFF\-]|\\.)+)/,
+                CLASS: /\.((?:[\w\u00c0-\uFFFF\-]|\\.)+)/,
+                NAME: /\[name=['"]*((?:[\w\u00c0-\uFFFF\-]|\\.)+)['"]*\]/,
+                ATTR: /\[\s*((?:[\w\u00c0-\uFFFF\-]|\\.)+)\s*(?:(\S?=)\s*(?:(['"])(.*?)\3|(#?(?:[\w\u00c0-\uFFFF\-]|\\.)*)|)|)\s*\]/,
+                TAG: /^((?:[\w\u00c0-\uFFFF\*\-]|\\.)+)/,
+                CHILD: /:(only|nth|last|first)-child(?:\(\s*(even|odd|(?:[+\-]?\d+|(?:[+\-]?\d*)?n\s*(?:[+\-]\s*\d+)?))\s*\))?/,
+                POS: /:(nth|eq|gt|lt|first|last|even|odd)(?:\((\d*)\))?(?=[^\-]|$)/,
+                PSEUDO: /:((?:[\w\u00c0-\uFFFF\-]|\\.)+)(?:\((['"]?)((?:\([^\)]+\)|[^\(\)]*)+)\2\))?/
+            },
+            relative: {
+                "+": function(checkSet, part){
+                    var isPartStr = typeof part === "string",
+                        isTag = isPartStr && !rNonWord.test( part ),
+                        isPartStrNotTag = isPartStr && !isTag;
+
+                    if ( isTag ) {
+                        part = part.toLowerCase();
+                    }
+
+                    for ( var i = 0, l = checkSet.length, elem; i < l; i++ ) {
+                        if ( (elem = checkSet[i]) ) {
+                            while ( (elem = elem.previousSibling) && elem.nodeType !== 1 ) {}
+
+                            checkSet[i] = isPartStrNotTag || elem && elem.nodeName.toLowerCase() === part ?
+                            elem || false :
+                            elem === part;
+                        }
+                    }
+
+                    if ( isPartStrNotTag ) {
+                        Sizzle.filter( part, checkSet, true );
+                    }
+                },
+
+                ">": function( checkSet, part ) {
+                    var elem,
+                        isPartStr = typeof part === "string",
+                        i = 0,
+                        l = checkSet.length;
+
+                    if ( isPartStr && !rNonWord.test( part ) ) {
+                        part = part.toLowerCase();
+
+                        for ( ; i < l; i++ ) {
+                            elem = checkSet[i];
+
+                            if ( elem ) {
+                                var parent = elem.parentNode;
+                                checkSet[i] = parent.nodeName.toLowerCase() === part ? parent : false;
+                            }
+                        }
+
+                    } else {
+                        for ( ; i < l; i++ ) {
+                            elem = checkSet[i];
+
+                            if ( elem ) {
+                                checkSet[i] = isPartStr ?
+                                    elem.parentNode :
+                                elem.parentNode === part;
+                            }
+                        }
+
+                        if ( isPartStr ) {
+                            Sizzle.filter( part, checkSet, true );
+                        }
+                    }
+                },
+
+                "": function(checkSet, part, isXML){
+                    var nodeCheck,
+                        doneName = done++,
+                        checkFn = dirCheck;
+
+                    if ( typeof part === "string" && !rNonWord.test( part ) ) {
+                        part = part.toLowerCase();
+                        nodeCheck = part;
+                        checkFn = dirNodeCheck;
+                    }
+
+                    checkFn( "parentNode", part, doneName, checkSet, nodeCheck, isXML );
+                },
+
+                "~": function( checkSet, part, isXML ) {
+                    var nodeCheck,
+                        doneName = done++,
+                        checkFn = dirCheck;
+
+                    if ( typeof part === "string" && !rNonWord.test( part ) ) {
+                        part = part.toLowerCase();
+                        nodeCheck = part;
+                        checkFn = dirNodeCheck;
+                    }
+
+                    checkFn( "previousSibling", part, doneName, checkSet, nodeCheck, isXML );
+                }
+            }
+        };
+
+        var origPOS = Expr.match.POS;   //支持伪类的正则
+
+        console.log(origPOS.exec('div button:first'));
+
+        /**
+         * 在指定的上下文数组context下，查找与选择器表达式selector匹配的元素集合
+         * @param selector
+         * @param context
+         * @param seed
+         * @returns {Array.<T>|*|{PSEUDO, CHILD, ID, TAG, CLASS, ATTR, POS}}
+         */
+        var posProcess = function( selector, context, seed ) {
+            var match,
+                tmpSet = [],
+                later = "",
+                root = context.nodeType ? [context] : context;
+
+            // Position selectors must be done after the filter
+            // And so must :not(positional) so we move all PSEUDOs to the end
+            while ( (match = Expr.match.PSEUDO.exec( selector )) ) {
+                later += match[0];
+                selector = selector.replace( Expr.match.PSEUDO, "" );
+            }
+
+            selector = Expr.relative[selector] ? selector + "*" : selector;
+
+            for ( var i = 0, l = root.length; i < l; i++ ) {
+                Sizzle( selector, root[i], tmpSet, seed );
+            }
+
+            return Sizzle.filter( later, tmpSet );
+        };
+
+        jQuery.find = Sizzle;
+
+    })();
+
     //外部接口
     window['$'] = jQuery;
 
 })(window);
 
 
-//var na = /<([\w:]+)/;
-//var a = '<div></div>';
-//
-//
-//console.log(na.exec(a));
+
