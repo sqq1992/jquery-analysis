@@ -1079,7 +1079,6 @@
                     set = Expr.relative[ parts[0] ] ?
                         [ context ] :
                         Sizzle( parts.shift(), context );
-                    console.log(set);
                     while ( parts.length ) {
                         selector = parts.shift();
 
