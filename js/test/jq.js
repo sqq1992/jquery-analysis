@@ -1068,6 +1068,7 @@
             do{     //遍历单个选择器或者并列选择器
                 chunker.exec("");
                 m = chunker.exec(soFar);    //匹配的数组
+                console.log(m);
                 if(m){
                     soFar = m[3];           //并且选择器的表达式，如果有的话
 
@@ -1088,7 +1089,6 @@
                 if ( parts.length === 2 && Expr.relative[ parts[0] ] ) { //如果数组parts只有2个元素，并且第一个是块间关系符的话，则可以直接调用来匹配元素集合
                     set = posProcess( parts[0] + parts[1], context, seed );
                 } else {                                            //否则从左向右对数组parts的其他表达式逐个进行查找,不断缩小上下文进行查找
-                    console.log(parts.shift());
 
                     set = Expr.relative[ parts[0] ] ?               //获取上下文的分支
                         [ context ] :
@@ -1191,7 +1191,7 @@
             if ( extra ) {
                 Sizzle( extra, origContext, results, seed );
                 Sizzle.uniqueSort( results );
-            }
+        }
 
             return results;
         };
