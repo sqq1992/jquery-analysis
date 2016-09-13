@@ -3914,6 +3914,7 @@
                 }
             } while ( m );
 
+            console.log(parts);
             if ( parts.length > 1 && origPOS.exec( selector ) ) {
 
                 if ( parts.length === 2 && Expr.relative[ parts[0] ] ) {
@@ -3938,6 +3939,7 @@
             } else {
                 // Take a shortcut and set the context if the root selector is an ID
                 // (but not if it'll be faster if the inner selector is an ID)
+
                 if ( !seed && parts.length > 1 && context.nodeType === 9 && !contextXML &&
                     Expr.match.ID.test(parts[0]) && !Expr.match.ID.test(parts[parts.length - 1]) ) {
 

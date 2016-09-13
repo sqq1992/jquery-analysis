@@ -1068,7 +1068,6 @@
             do{     //遍历单个选择器或者并列选择器
                 chunker.exec("");
                 m = chunker.exec(soFar);    //匹配的数组
-                console.log(m);
                 if(m){
                     soFar = m[3];           //并且选择器的表达式，如果有的话
 
@@ -1080,16 +1079,15 @@
                     }
 
                 }
-
             }while(m);
 
             //如果存在位置伪类，则从左向右查找 列如div button:first
             if ( parts.length > 1 && origPOS.exec( selector ) ) {
 
                 if ( parts.length === 2 && Expr.relative[ parts[0] ] ) { //如果数组parts只有2个元素，并且第一个是块间关系符的话，则可以直接调用来匹配元素集合
+
                     set = posProcess( parts[0] + parts[1], context, seed );
                 } else {                                            //否则从左向右对数组parts的其他表达式逐个进行查找,不断缩小上下文进行查找
-
                     set = Expr.relative[ parts[0] ] ?               //获取上下文的分支
                         [ context ] :
                         Sizzle( parts.shift(), context );
@@ -1100,25 +1098,21 @@
                             selector += parts.shift();
                         }
 
-                        console.log(selector, set, seed);
                         set = posProcess( selector, set, seed );
                     }
                 }
 
             } else {    //如果不存在位置伪类，则从右向左查找
-                console.log(parts);
-                console.log(seed, context);
                 //如果为id选择器,修正上下文的第一个选择器匹配的元素，缩小查找范围
                 if ( !seed && parts.length > 1 && context.nodeType === 9 && !contextXML &&
                     Expr.match.ID.test(parts[0]) && !Expr.match.ID.test(parts[parts.length - 1]) ) {
-
                     ret = Sizzle.find( parts.shift(), context, contextXML );
                     context = ret.expr ?
                         Sizzle.filter( ret.expr, ret.set )[0] :
                         ret.set[0];
                 }
 
-                //查找最后一个块表达式匹配的元素集合
+                //查找最后一个块表达式匹配的元素集合,得到候选集set,隐身级checkSet
                 if ( context ) {
                     ret = seed ?
                     { expr: parts.pop(), set: makeArray(seed) } :
@@ -1128,6 +1122,7 @@
                         Sizzle.filter( ret.expr, ret.set ) :
                         ret.set;
 
+                    //如果还存在块表达式或块间关系符,则创建一份候选集set的副本，赋值给checkSet
                     if ( parts.length > 0 ) {
                         checkSet = makeArray( set );
 
@@ -1135,6 +1130,7 @@
                         prune = false;
                     }
 
+                    //遍历剩余的块表达式和块间关系符，对映射集checkSet执行块间关系过滤
                     while ( parts.length ) {
                         cur = parts.pop();
                         pop = cur;
@@ -1157,6 +1153,7 @@
                 }
             }
 
+            //根据映射集checkSet筛选候选集set,将最终的匹配元素放入结果集results
             if ( !checkSet ) {
                 checkSet = set;
             }
@@ -1165,8 +1162,9 @@
                 Sizzle.error( cur || selector );
             }
 
+            //当checkSet这个匹配过来的元素的数组
             if ( toString.call(checkSet) === "[object Array]" ) {
-                if ( !prune ) {
+                if ( !prune ) { //不需要筛选集set，直接将映射集checkSet插入集results中
                     results.push.apply( results, checkSet );
 
                 } else if ( context && context.nodeType === 1 ) {
@@ -1196,6 +1194,11 @@
             return results;
         };
 
+        /**
+         * 对元素进行去重处理
+         * @param results   传入的数组
+         * @returns {*}     返回去重后的数组
+         */
         Sizzle.uniqueSort = function( results ) {
             if ( sortOrder ) {
                 hasDuplicate = baseHasDuplicate;
@@ -1221,9 +1224,15 @@
             return Sizzle( expr, null, null, [node] ).length > 0;
         };
 
+        /**
+         * 负责查找与块表达式匹配的元素集合
+         * @param expr      块表达式
+         * @param context   dom元素或文档对象，作为查找时的上下文
+         * @param isXML     布尔值，指示是否运行在一个xml文档中
+         * @returns {*}
+         */
         Sizzle.find = function( expr, context, isXML ) {
             var set, i, len, match, type, left;
-
             if ( !expr ) {
                 return [];
             }
@@ -1235,10 +1244,12 @@
                     left = match[1];
                     match.splice( 1, 1 );
 
+                    //查找匹配元素，过滤掉特殊字符
                     if ( left.substr( left.length - 1 ) !== "\\" ) {
                         match[1] = (match[1] || "").replace( rBackslash, "" );
-                        set = Expr.find[ type ]( match, context, isXML );
+                        set = Expr.find[ type ]( match, context, isXML );   //查找到候选的元素
 
+                        //删除快表达式中已查找过的部分
                         if ( set != null ) {
                             expr = expr.replace( Expr.match[ type ], "" );
                             break;
@@ -1247,15 +1258,25 @@
                 }
             }
 
+            //如果没有找到对应类型的查找函数，则读取上下文的所有后代元素
             if ( !set ) {
                 set = typeof context.getElementsByTagName !== "undefined" ?
                     context.getElementsByTagName( "*" ) :
                     [];
             }
 
+            //返回{set:候选集,expr:块表达式的剩余部分}
             return { set: set, expr: expr };
         };
 
+        /**
+         * 负责用块表达式过滤元素集合
+         * @param expr  表达式
+         * @param set   候选集的元素
+         * @param inplace   布尔值 如果为true
+         * @param not       布尔值 如果为true,则除去匹配元素，保留不匹配元素，否则，反之
+         * @returns {*}
+         */
         Sizzle.filter = function( expr, set, inplace, not ) {
             var match, anyFound,
                 type, found, item, filter, left,
@@ -1271,10 +1292,12 @@
                         filter = Expr.filter[ type ];
                         left = match[1];
 
+
                         anyFound = false;
 
                         match.splice(1,1);
 
+                        //进行字符串的转义
                         if ( left.substr( left.length - 1 ) === "\\" ) {
                             continue;
                         }
@@ -1283,6 +1306,7 @@
                             result = [];
                         }
 
+                        //在预过滤函数集下，进行过滤
                         if ( Expr.preFilter[ type ] ) {
                             match = Expr.preFilter[ type ]( match, curLoop, inplace, result, not, isXMLFilter );
 
@@ -1294,11 +1318,13 @@
                             }
                         }
 
+                        //遍历元素集合curLoop,对其中的每个元素执行过滤函数，检测元素是否匹配
                         if ( match ) {
                             for ( i = 0; (item = curLoop[i]) != null; i++ ) {
                                 if ( item ) {
                                     found = filter( item, match, i, curLoop );
                                     pass = not ^ found;
+
 
                                     if ( inplace && found != null ) {
                                         if ( pass ) {
@@ -1391,9 +1417,14 @@
             return ret;
         };
 
+        /**
+         * 包含了sizzle在查找和过滤过程中用到的正则,查找函数,过滤函数
+         * @type {{order: string[], match: {ID: RegExp, CLASS: RegExp, NAME: RegExp, ATTR: RegExp, TAG: RegExp, CHILD: RegExp, POS: RegExp, PSEUDO: RegExp}, leftMatch: {}, attrMap: {class: string, for: string}, attrHandle: {href: Function, type: Function}, relative: {+: Function, >: Function, : Function, ~: Function}, find: {ID: Function, NAME: Function, TAG: Function}, preFilter: {CLASS: Function, ID: Function, TAG: Function, CHILD: Function, ATTR: Function, PSEUDO: Function, POS: Function}, filters: {enabled: Function, disabled: Function, checked: Function, selected: Function, parent: Function, empty: Function, has: Function, header: Function, text: Function, radio: Function, checkbox: Function, file: Function, password: Function, submit: Function, image: Function, reset: Function, button: Function, input: Function, focus: Function}, setFilters: {first: Function, last: Function, even: Function, odd: Function, lt: Function, gt: Function, nth: Function, eq: Function}, filter: {PSEUDO: Function, CHILD: Function, ID: Function, TAG: Function, CLASS: Function, ATTR: Function, POS: Function}}}
+         */
         var Expr = Sizzle.selectors = {
             order: [ "ID", "NAME", "TAG" ],
 
+            //[\w\u00c0-\uFFFF\-] 解析单子字符，下划线，连字符
             match: {
                 ID: /#((?:[\w\u00c0-\uFFFF\-]|\\.)+)/,
                 CLASS: /\.((?:[\w\u00c0-\uFFFF\-]|\\.)+)/,
@@ -1422,6 +1453,11 @@
             },
 
             relative: {
+                /**
+                 * 从右向左匹配下一个兄弟元素
+                 * checkSet 映射集
+                 * part 关系符左侧的块表达式
+                 * */
                 "+": function(checkSet, part){
                     var isPartStr = typeof part === "string",
                         isTag = isPartStr && !rNonWord.test( part ),
@@ -1433,6 +1469,7 @@
 
                     for ( var i = 0, l = checkSet.length, elem; i < l; i++ ) {
                         if ( (elem = checkSet[i]) ) {
+                            //过滤掉前面的元素不是元素节点
                             while ( (elem = elem.previousSibling) && elem.nodeType !== 1 ) {}
 
                             checkSet[i] = isPartStrNotTag || elem && elem.nodeName.toLowerCase() === part ?
@@ -1446,6 +1483,9 @@
                     }
                 },
 
+                    /**
+                     *  用于块间关系符的查找,用父亲和儿子元素
+                     * */
                 ">": function( checkSet, part ) {
                     var elem,
                         isPartStr = typeof part === "string",
@@ -1926,6 +1966,7 @@
                 return "\\" + (num - 0 + 1);
             };
 
+        //todo 为正则匹配添加后缀正则和前缀正则，保证不能含有某些特定字符串
         for ( var type in Expr.match ) {
             Expr.match[ type ] = new RegExp( Expr.match[ type ].source + (/(?![^\[]*\])(?![^\(]*\))/.source) );
             Expr.leftMatch[ type ] = new RegExp( /(^(?:.|\r|\n)*?)/.source + Expr.match[ type ].source.replace(/\\(\d+)/g, fescape) );
@@ -2315,6 +2356,9 @@
             }
         })();
 
+        /**
+         * 测试当前的浏览器是否正确支持方法getElementByClassName()
+         */
         (function(){
             var div = document.createElement("div");
 
@@ -2333,6 +2377,7 @@
                 return;
             }
 
+            //如果支持getElementsByClassName()这个api的话
             Expr.order.splice(1, 0, "CLASS");
             Expr.find.CLASS = function( match, context, isXML ) {
                 if ( typeof context.getElementsByClassName !== "undefined" && !isXML ) {
@@ -2443,7 +2488,7 @@
         };
 
         /**
-         * 查找删除伪类后的选择器表达式所匹配的元素集合
+         * 查找删除伪类后的选择器表达式所匹配的元素集合,返回过滤后的伪类数组
          * @param selector  传入的表达式
          * @param context   上下文
          * @param seed      可选的元素集合
@@ -2452,7 +2497,7 @@
         var posProcess = function( selector, context, seed ) {
             var match,
                 tmpSet = [],
-                later = "",
+                later = "",             //记录伪类的变量
                 root = context.nodeType ? [context] : context;
 
             /**
@@ -2463,13 +2508,15 @@
                 selector = selector.replace( Expr.match.PSEUDO, "" );
             }
 
+            //如果删除伪类后的选择器表达式只剩一个块间关系符的，则追加一个通配附'*'
             selector = Expr.relative[selector] ? selector + "*" : selector;
 
+            //遍历上下文数组,调用函数sizzle查找删除伪类之后的选择器表达式匹配的元素集合,将查找结果合并到数组tempSet中
             for ( var i = 0, l = root.length; i < l; i++ ) {
                 Sizzle( selector, root[i], tmpSet, seed );
             }
 
-            console.log(later, tmpSet);
+            //返回过滤后的查找对象
             return Sizzle.filter( later, tmpSet );
         };
 

@@ -19,7 +19,7 @@
         (function () {
 
             var chunker = /((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[^\[\]]*\]|['"][^'"]*['"]|[^\[\]'"]+)+\]|\\.|[^ >+~,(\[\\]+)+|[>+~])(\s*,\s*)?((?:.|\r|\n)*)/g;
-            var test = function (selector) {
+            var Sizzle = function (selector) {
 
                 if(!selector || typeof selector!=="string"){
                     return false;
@@ -68,10 +68,10 @@
 
             }
 
-            window['test'] = test;
+            window['Sizzle'] = Sizzle;
         })();
 
-        test("div button:first,div p:first,p span:first");
+        Sizzle("div button:first,div p:first,p span:first");
     </script>
 </body>
 </html>
