@@ -1189,7 +1189,7 @@
             if ( extra ) {
                 Sizzle( extra, origContext, results, seed );
                 Sizzle.uniqueSort( results );
-        }
+            }
 
             return results;
         };
