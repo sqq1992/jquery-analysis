@@ -1582,6 +1582,9 @@
                 }
             },
             preFilter: {
+                        /**
+                         *  负责检查元素集合中的每个元素是否含有指定的类样式
+                         * */
                 CLASS: function( match, curLoop, inplace, result, not, isXML ) {
                     match = " " + match[1].replace( rBackslash, "" ) + " ";
 
