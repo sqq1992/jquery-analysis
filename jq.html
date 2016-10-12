@@ -5,10 +5,37 @@
     <title></title>
 </head>
 <body>
+
+<div id="aaa">
+    0000
+    <div class="div">
+        111
+        <div class="div2">
+            2222
+            <div class="div3">
+                33333
+            </div>
+        </div>
+        <button class="div2" disabled="disabled">
+            2222
+            <div class="div3">
+                33333
+            </div>
+        </button>
+        <button class="div2" disabled="disabled">
+            2222
+        </button>
+        <div class="div3">
+            33333
+        </div>
+    </div>
+</div>
+
     <div></div>
     <div id="test">
         我是测试啊
-        <button></button>
+        <button>111</button>
+        <button >2222</button>
     </div>
 
     <script src="js/test/jq.js"></script>
@@ -16,9 +43,12 @@
 
     <script>
 
-        $.find("#test button");
+//        var a = $.find("#aaa .div button:disabled+.div3");
+        var a = $.find(">div:first");
+        console.log(a);
 
-
+//        var b = $.find("#test button:disabled");
+//        console.log(b);
 
 
 

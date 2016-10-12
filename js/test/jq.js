@@ -1081,6 +1081,7 @@
                 }
             }while(m);
 
+            console.log(parts);
             //如果存在位置伪类，则从左向右查找 列如div button:first
             if ( parts.length > 1 && origPOS.exec( selector ) ) {
 
@@ -1492,9 +1493,10 @@
                         i = 0,
                         l = checkSet.length;
 
-                    if ( isPartStr && !rNonWord.test( part ) ) {
+                    if ( isPartStr && !rNonWord.test( part ) ) {//如果参数是标签，
                         part = part.toLowerCase();
-
+                        //则遍历映射集checkSet,查找每个元素的父元素
+                        //如果nodeName相等，则将相应的checkSet位置替换为对应的父元素
                         for ( ; i < l; i++ ) {
                             elem = checkSet[i];
 
@@ -1504,7 +1506,8 @@
                             }
                         }
 
-                    } else {
+                    } else { //如果不是标签的话
+
                         for ( ; i < l; i++ ) {
                             elem = checkSet[i];
 
@@ -1521,6 +1524,12 @@
                     }
                 },
 
+                /**
+                 * 匹配祖先的元素
+                 * @param checkSet
+                 * @param part
+                 * @param isXML
+                 */
                 "": function(checkSet, part, isXML){
                     var nodeCheck,
                         doneName = done++,
@@ -1660,6 +1669,16 @@
                     return match;
                 },
 
+                /**
+                 * 处理伪类预过滤函数
+                 * @param match
+                 * @param curLoop
+                 * @param inplace
+                 * @param result
+                 * @param not
+                 * @returns {*}
+                 * @constructor
+                 */
                 PSEUDO: function( match, curLoop, inplace, result, not ) {
                     if ( match[1] === "not" ) {
                         // If we're dealing with a complex expression, or a simple one
@@ -1972,6 +1991,7 @@
         //todo 为正则匹配添加后缀正则和前缀正则，保证不能含有某些特定字符串
         for ( var type in Expr.match ) {
             Expr.match[ type ] = new RegExp( Expr.match[ type ].source + (/(?![^\[]*\])(?![^\(]*\))/.source) );
+            console.log(Expr.match[type]);
             Expr.leftMatch[ type ] = new RegExp( /(^(?:.|\r|\n)*?)/.source + Expr.match[ type ].source.replace(/\\(\d+)/g, fescape) );
         }
 
@@ -2425,6 +2445,16 @@
             }
         }
 
+        /**
+         * 负责遍历候选集checkset，检查其中的每个元素在某个方向上dir上是否有与参数cur匹配或相等的插不上
+         * 如果找到，则将候选集checkset中对应位置的元素替换换为找到的元素或true;如果未找到，则替换为false
+         * @param dir   表示查找方向的字符串 列如parentNode
+         * @param cur   匹配的块表达式
+         * @param doneName  数值
+         * @param checkSet  候选集数组
+         * @param nodeCheck
+         * @param isXML
+         */
         function dirCheck( dir, cur, doneName, checkSet, nodeCheck, isXML ) {
             for ( var i = 0, l = checkSet.length; i < l; i++ ) {
                 var elem = checkSet[i];
@@ -2435,6 +2465,8 @@
                     elem = elem[dir];
 
                     while ( elem ) {
+
+                        //如果遇到已经检查过的元素，则直接取改元素在候选集checkSet中对应位置上的元素，避免重复查找
                         if ( elem[ expando ] === doneName ) {
                             match = checkSet[elem.sizset];
                             break;
@@ -2446,13 +2478,14 @@
                                 elem.sizset = i;
                             }
 
+                            //如果参数cur是DOM元素，则直接检查找到的元素是否与之相等
                             if ( typeof cur !== "string" ) {
                                 if ( elem === cur ) {
                                     match = true;
                                     break;
                                 }
 
-                            } else if ( Sizzle.filter( cur, [elem] ).length > 0 ) {
+                            } else if ( Sizzle.filter( cur, [elem] ).length > 0 ) {//调用这个方法检查是否与之相等
                                 match = elem;
                                 break;
                             }
