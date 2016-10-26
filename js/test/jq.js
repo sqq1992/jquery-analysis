@@ -2571,6 +2571,223 @@
 
     })();
 
+
+    //缓存对象的集合
+    var flagsCache = {};
+
+    /**
+     * 缓存对象的函数
+     * @param flags 传入的key值，将其切割，她们的value值为true
+     * @returns {{}}    返回缓存的对象
+     */
+    function createFlags( flags ) {
+        var object = flagsCache[ flags ] = {},
+            i, length;
+        flags = flags.split( /\s+/ );
+        for ( i = 0, length = flags.length; i < length; i++ ) {
+            object[ flags[i] ] = true;
+        }
+        return object;
+    }
+
+    /**
+     *
+     * @param flags
+     * @returns {{add: Function, remove: Function, has: Function, empty: Function, disable: Function, disabled: Function, lock: Function, locked: Function, fireWith: Function, fire: Function, fired: Function}}
+     * @constructor
+     * 1. 使用memory参数， 则执行fire后， 后续加入add回调函数会立即执行
+     */
+    jQuery.Callbacks = function( flags ) {
+
+        //缓存对象集合参数
+        flags = flags ? ( flagsCache[ flags ] || createFlags( flags ) ) : {};
+
+        var // 存储回调函数的数组
+            list = [],
+        // Stack of fire calls for repeatable lists
+            stack = [],
+        //  最后一次触发回调时传入的参数,初始值undefined,表示未被触发过
+            memory,
+        // 是否正在回调
+            firing,
+        // 回调函数的起点索引
+            firingStart,
+        // 回调时的循环结尾
+            firingLength,
+        // 当前正在回调的索引
+            firingIndex,
+
+            /**
+             * 存储回调函数
+             * @param args  传入的数组
+             */
+            add = function( args ) {
+                var i,
+                    length,
+                    elem,
+                    type,
+                    actual;
+                for ( i = 0, length = args.length; i < length; i++ ) {
+                    elem = args[ i ];
+                    type = jQuery.type( elem );
+                    if ( type === "array" ) {   //如果为数组，则在次遍历将回调函数取出插入数组中
+                        add( elem );
+                    } else if ( type === "function" ) { //将回调函数存入数组中
+                        if ( !flags.unique || !self.has( elem ) ) {//参数为unique时，避免重复加入相同的回调函数
+                            list.push( elem );
+                        }
+                    }
+                }
+            },
+
+            //执行回调函数
+            fire = function( context, args ) {
+                args = args || [];
+                memory = !flags.memory || [ context, args ];
+                firing = true;
+                firingIndex = firingStart || 0;
+                firingStart = 0;
+                firingLength = list.length;
+                for ( ; list && firingIndex < firingLength; firingIndex++ ) {
+                    if ( list[ firingIndex ].apply( context, args ) === false && flags.stopOnFalse ) {
+                        memory = true; // 清楚回调函数的缓存
+                        break;
+                    }
+                }
+                firing = false;
+                if ( list ) {
+                    if ( !flags.once ) {
+                        if ( stack && stack.length ) {
+                            memory = stack.shift();
+                            self.fireWith( memory[ 0 ], memory[ 1 ] );
+                        }
+                    } else if ( memory === true ) {//如果参数是stopOnFalse,则只执行第一个回调函数
+                        self.disable();
+                    } else {            //传入参数是once的话，则执行一次
+                        list = [];
+                    }
+                }
+            },
+
+            //外部接口的对象集合
+            self = {
+                //增加回调函数
+                add: function() {
+                    if ( list ) {
+                        var length = list.length;
+                        //增加回调函数
+                        add( arguments );
+
+                        if ( firing ) {//如果回调函数正在执行，则加入的回调函数马上也会执行
+                            firingLength = list.length;
+                        } else if ( memory && memory !== true ) {//如果参数是memory的话，加入add会马上执行
+                            firingStart = length;
+                            fire( memory[ 0 ], memory[ 1 ] );
+                        }
+                    }
+                    return this;
+                },
+                // Remove a callback from the list
+                remove: function() {
+                    if ( list ) {
+                        var args = arguments,
+                            argIndex = 0,
+                            argLength = args.length;
+                        for ( ; argIndex < argLength ; argIndex++ ) {
+                            for ( var i = 0; i < list.length; i++ ) {
+                                if ( args[ argIndex ] === list[ i ] ) {
+                                    // Handle firingIndex and firingLength
+                                    if ( firing ) {
+                                        if ( i <= firingLength ) {
+                                            firingLength--;
+                                            if ( i <= firingIndex ) {
+                                                firingIndex--;
+                                            }
+                                        }
+                                    }
+                                    // Remove the element
+                                    list.splice( i--, 1 );
+                                    // If we have some unicity property then
+                                    // we only need to do this once
+                                    if ( flags.unique ) {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return this;
+                },
+                /**
+                 * 判断当前的回调函数在list中是否已经拥有
+                 * @param fn
+                 * @returns {boolean}
+                 */
+                has: function( fn ) {
+                    if ( list ) {
+                        var i = 0,
+                            length = list.length;
+                        for ( ; i < length; i++ ) {
+                            if ( fn === list[ i ] ) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                },
+                // Remove all callbacks from the list
+                empty: function() {
+                    list = [];
+                    return this;
+                },
+                //禁止在执行回调函数，需要重新调用fire()重新启用
+                disable: function() {
+                    list = stack = memory = undefined;
+                    return this;
+                },
+                // Is it disabled?
+                disabled: function() {
+                    return !list;
+                },
+                // Lock the list in its current state
+                lock: function() {
+                    stack = undefined;
+                    if ( !memory || memory === true ) {
+                        self.disable();
+                    }
+                    return this;
+                },
+                // Is it locked?
+                locked: function() {
+                    return !stack;
+                },
+                // Call all callbacks with the given context and arguments
+                fireWith: function( context, args ) {
+                    if ( stack ) {
+                        if ( firing ) {
+                            if ( !flags.once ) {
+                                stack.push( [ context, args ] );
+                            }
+                        } else if ( !( flags.once && memory ) ) {
+                            fire( context, args );
+                        }
+                    }
+                    return this;
+                },
+                // Call all the callbacks with the given arguments
+                fire: function() {
+                    self.fireWith( this, arguments );
+                    return this;
+                },
+                // To know if the callbacks have already been called at least once
+                fired: function() {
+                    return !!memory;
+                }
+            };
+
+        return self;
+    };
+
     //外部接口
     window['$'] = jQuery;
 

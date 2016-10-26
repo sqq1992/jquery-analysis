@@ -43,15 +43,130 @@
 
     <script>
 
-//        var a = $.find("#aaa .div button:disabled+.div3");
-        var a = $.find(">div:first");
-        console.log(a);
+        function test2(){
+            this.handles = {};
+        }
+        test2.prototype = {
+            constructor:test2,
 
-//        var b = $.find("#test button:disabled");
-//        console.log(b);
+            addHandlers:function(type,func){
+                if(typeof this.handles[type]=="undefined"){
+                    this.handles[type] = [];
+                }
+                this.handles[type].push(func);
+            },
+
+            fire:function(type,args){
+                if(this.handles[type] instanceof Array){
+                    for(var i= 0,j=this.handles[type].length;i<j;i++){
+                        this.handles[type][i](args);
+                    }
+                }
+            },
+
+            removeAddhandlers:function(type){
+                if(this.handles[type] instanceof Array){
+                    delete this.handles[type];
+                }
+            }
+
+        };
+
+        var qwe = new test2();
+        qwe.addHandlers('aa',function(msg){
+            console.log(msg);
+        })
+
+        qwe.removeAddhandlers('aa');
+        qwe.fire('aa', '我是sb啊');
 
 
+
+        function test(list,callback){
+
+            setTimeout(function () {
+
+                var task = list.shift();
+                task();
+
+                if(list.length>0){
+                    setTimeout(arguments.callee, 1000);
+                }else{
+                    callback();
+                }
+
+            }, 25);
+
+        }
+
+//        test([
+//                function(){
+//                    alert(1);
+//                },
+//                function(){
+//                    alert(2);
+//                }
+//        ],function(){
+//            alert('3');
+//        })
+
+
+//        var cB = $.Callbacks(),
+//            flag = true;
+//
+//
+//        function fn1(args){
+//            console.log('fn1',args);
+//            if(flag){
+//                cB.fire('第二次');
+//                cB.fire('第三次');
+//                flag = false;
+//            }
+//        }
+//
+//        cB.add(fn1);
+//        cB.fire('第一次');
 
     </script>
+
+<script>
+
+//            var cB = $.Callbacks('stopOnFalse');
+//
+//
+//            function fn1(args){
+//                console.log(args);
+//            }
+//
+//            function fn2(args){console.log('fn2',args)}
+//
+//            cB.add(fn1);
+//            cB.add(fn2);
+//            cB.fire('第一次');
+
+
+            function fn1(args){
+                console.log(args);
+            }
+
+            var callbacks = $.Callbacks("memory");
+
+            callbacks.add( fn1 );
+            callbacks.fire( "1" );
+
+            callbacks.add( fn1 );
+            callbacks.fire( "2" );
+//
+//            callbacks.add( fn1 );
+//            callbacks.fire( "3" );
+//
+//            callbacks.add( fn1 );
+//            callbacks.fire( "4" );
+
+
+</script>
+
+
+
 </body>
 </html>
