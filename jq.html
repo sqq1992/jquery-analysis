@@ -149,19 +149,47 @@
                 console.log(args);
             }
 
-            var callbacks = $.Callbacks("memory");
-
-            callbacks.add( fn1 );
-            callbacks.fire( "1" );
-
-            callbacks.add( fn1 );
-            callbacks.fire( "2" );
+//            var callbacks = $.Callbacks("memory");
+//
+//            callbacks.add( fn1 );
+//            callbacks.fire( "1" );
+//
+//            callbacks.add( fn1 );
+//            callbacks.fire( "2" );
 //
 //            callbacks.add( fn1 );
 //            callbacks.fire( "3" );
 //
 //            callbacks.add( fn1 );
 //            callbacks.fire( "4" );
+
+//            var callbacks = $.Callbacks("once,memory");
+//
+//            callbacks.add( fn1 );
+//            callbacks.fire( "1" );
+//
+//            callbacks.add( fn1 );
+//            callbacks.fire( "2" );
+//
+//            callbacks.add( fn1 );
+//            callbacks.fire( "3" );
+//
+//            callbacks.add( fn1 );
+//            callbacks.fire( "4" );
+
+            var cb = $.Callbacks();
+            function f1(args){console.log('f1',args)}
+            function f2(args){
+                console.log('f2', args);
+
+
+            }
+
+            function f3(args){console.log('f3',args)}
+
+            cb.add(f2);
+            cb.fire("哈哈");
+
 
 
 </script>

@@ -2596,6 +2596,7 @@
      * @returns {{add: Function, remove: Function, has: Function, empty: Function, disable: Function, disabled: Function, lock: Function, locked: Function, fireWith: Function, fire: Function, fired: Function}}
      * @constructor
      * 1. 使用memory参数， 则执行fire后， 后续加入add回调函数会立即执行
+     * 2. 使用参数once,memory, 则相当于没有传入参数的效果
      */
     jQuery.Callbacks = function( flags ) {
 
@@ -2696,7 +2697,8 @@
                         for ( ; argIndex < argLength ; argIndex++ ) {
                             for ( var i = 0; i < list.length; i++ ) {
                                 if ( args[ argIndex ] === list[ i ] ) {
-                                    // Handle firingIndex and firingLength
+
+                                    //针对正在执行的回调函数下，做删除处理
                                     if ( firing ) {
                                         if ( i <= firingLength ) {
                                             firingLength--;
@@ -2705,10 +2707,11 @@
                                             }
                                         }
                                     }
-                                    // Remove the element
+
+                                    //删除其中的回调函数
                                     list.splice( i--, 1 );
-                                    // If we have some unicity property then
-                                    // we only need to do this once
+
+                                    //不会有重复的回调函数，直接退出循环，针对参数为unique做的优化
                                     if ( flags.unique ) {
                                         break;
                                     }
@@ -2745,11 +2748,12 @@
                     list = stack = memory = undefined;
                     return this;
                 },
-                // Is it disabled?
+                // 回调函数是否被禁止
                 disabled: function() {
                     return !list;
                 },
-                // Lock the list in its current state
+
+                //将回调函数直接锁住，使其无法调用
                 lock: function() {
                     stack = undefined;
                     if ( !memory || memory === true ) {
@@ -2757,7 +2761,8 @@
                     }
                     return this;
                 },
-                // Is it locked?
+
+                //是否被锁
                 locked: function() {
                     return !stack;
                 },
