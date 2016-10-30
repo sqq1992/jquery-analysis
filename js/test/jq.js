@@ -2793,6 +2793,107 @@
         return self;
     };
 
+    jQuery.extend({
+
+        //延迟对象
+        Deferred: function (func) {
+            var doneList = jQuery.Callbacks("once memory"),     //成功回调函数列表
+                failList = jQuery.Callbacks("once memory"),     //失败回调函数列表
+                progressList = jQuery.Callbacks("memory"),      //消息回调函数
+                state = "pending",
+                lists = {
+                    resolve: doneList,
+                    reject: failList,
+                    notify: progressList
+                },
+                promise = {
+                    done: doneList.add,
+                    fail: failList.add,
+                    progress: progressList.add,
+
+                    state: function () {
+                        return state;
+                    },
+
+                    // Deprecated
+                    isResolved: doneList.fired,
+                    isRejected: failList.fired,
+
+                    //便捷方法: 添加成功回调函数,失败回调函数,
+                    then: function (doneCallbacks, failCallbacks, progressCallbacks) {
+                        deferred.done(doneCallbacks).fail(failCallbacks).progress(progressCallbacks);
+                        return this;
+                    },
+
+                    //便捷方法: 将参数添加到成功回调函数和失败回调函数当中
+                    always: function () {
+                        deferred.done.apply(deferred, arguments).fail.apply(deferred, arguments);
+                        return this;
+                    },
+
+                    pipe: function (fnDone, fnFail, fnProgress) {
+                        return jQuery.Deferred(function (newDefer) {
+                            jQuery.each({
+                                done: [fnDone, "resolve"],
+                                fail: [fnFail, "reject"],
+                                progress: [fnProgress, "notify"]
+                            }, function (handler, data) {
+                                var fn = data[0],
+                                    action = data[1],
+                                    returned;
+                                if (jQuery.isFunction(fn)) {
+                                    deferred[handler](function () {
+                                        returned = fn.apply(this, arguments);
+                                        if (returned && jQuery.isFunction(returned.promise)) {
+                                            returned.promise().then(newDefer.resolve, newDefer.reject, newDefer.notify);
+                                        } else {
+                                            newDefer[action + "With"](this === deferred ? newDefer : this, [returned]);
+                                        }
+                                    });
+                                } else {
+                                    deferred[handler](newDefer[action]);
+                                }
+                            });
+                        }).promise();
+                    },
+                    // Get a promise for this deferred
+                    // If obj is provided, the promise aspect is added to the object
+                    promise: function (obj) {
+                        if (obj == null) {
+                            obj = promise;
+                        } else {
+                            for (var key in promise) {
+                                obj[key] = promise[key];
+                            }
+                        }
+                        return obj;
+                    }
+                },
+                deferred = promise.promise({}),
+                key;
+
+            for (key in lists) {
+                deferred[key] = lists[key].fire;
+                deferred[key + "With"] = lists[key].fireWith;
+            }
+
+            // Handle state
+            deferred.done(function () {
+                state = "resolved";
+            }, failList.disable, progressList.lock).fail(function () {
+                state = "rejected";
+            }, doneList.disable, progressList.lock);
+
+            // Call given func if any
+            if (func) {
+                func.call(deferred, deferred);
+            }
+
+            // All done!
+            return deferred;
+        }
+    });
+
     //外部接口
     window['$'] = jQuery;
 

@@ -99,96 +99,23 @@
 
         }
 
-//        test([
-//                function(){
-//                    alert(1);
-//                },
-//                function(){
-//                    alert(2);
-//                }
-//        ],function(){
-//            alert('3');
-//        })
 
+        var defer = $.Deferred(); //构建异步对象
 
-//        var cB = $.Callbacks(),
-//            flag = true;
-//
-//
-//        function fn1(args){
-//            console.log('fn1',args);
-//            if(flag){
-//                cB.fire('第二次');
-//                cB.fire('第三次');
-//                flag = false;
-//            }
-//        }
-//
-//        cB.add(fn1);
-//        cB.fire('第一次');
+        setTimeout(function(){
+            defer.resolve( 5 );
+        },1000);
 
-    </script>
+        var filtered  = defer.then(function( value ) {
+            console.log('刚开始', value);
+        });
 
-<script>
+        filtered.done(function( value ) {
+            console.log('打印出值',value)
+        });
 
-//            var cB = $.Callbacks('stopOnFalse');
-//
-//
-//            function fn1(args){
-//                console.log(args);
-//            }
-//
-//            function fn2(args){console.log('fn2',args)}
-//
-//            cB.add(fn1);
-//            cB.add(fn2);
-//            cB.fire('第一次');
+        console.log('测试异步');
 
-
-            function fn1(args){
-                console.log(args);
-            }
-
-//            var callbacks = $.Callbacks("memory");
-//
-//            callbacks.add( fn1 );
-//            callbacks.fire( "1" );
-//
-//            callbacks.add( fn1 );
-//            callbacks.fire( "2" );
-//
-//            callbacks.add( fn1 );
-//            callbacks.fire( "3" );
-//
-//            callbacks.add( fn1 );
-//            callbacks.fire( "4" );
-
-//            var callbacks = $.Callbacks("once,memory");
-//
-//            callbacks.add( fn1 );
-//            callbacks.fire( "1" );
-//
-//            callbacks.add( fn1 );
-//            callbacks.fire( "2" );
-//
-//            callbacks.add( fn1 );
-//            callbacks.fire( "3" );
-//
-//            callbacks.add( fn1 );
-//            callbacks.fire( "4" );
-
-            var cb = $.Callbacks();
-            function f1(args){console.log('f1',args)}
-            function f2(args){
-                console.log('f2', args);
-
-
-            }
-
-            function f3(args){console.log('f3',args)}
-
-            cb.add(f2);
-            cb.fire("哈哈");
 
 
 
